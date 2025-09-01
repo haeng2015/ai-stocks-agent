@@ -7,6 +7,10 @@ import os
 import shutil
 from dotenv import load_dotenv
 
+# 导入日志工具
+from utils.logger import get_logger
+logger = get_logger('vector_store')
+
 # 加载环境变量
 load_dotenv()
 
@@ -29,7 +33,7 @@ class VectorStoreManager:
         # 初始化嵌入模型
         try:
             # 首先尝试不强制本地文件，允许自动下载模型（如果有网络连接）
-            print(f"尝试加载嵌入模型: {self.embedding_model}")
+            logger.debug(f"尝试加载嵌入模型: {self.embedding_model}")
             self.embeddings = HuggingFaceEmbeddings(
                 model_name=self.embedding_model,
                 model_kwargs={'device': 'cpu'},
@@ -37,34 +41,35 @@ class VectorStoreManager:
                 cache_folder=os.getenv('CACHE_DIR', './cache')
                 # 不设置local_files_only=True，允许自动下载
             )
-            print(f"成功加载嵌入模型: {self.embedding_model}")
+            logger.debug(f"成功加载嵌入模型: {self.embedding_model}")
         except Exception as e:
             # 如果模型加载失败，提供友好的错误消息和指导
-            print("\n" + "="*80)
-            print(f"错误: 无法加载嵌入模型: {str(e)}")
-            print(f"模型名称: {self.embedding_model}")
-            print("\n可能的原因:")
-            print("1. 没有网络连接，无法下载模型")
-            print("2. 本地缓存中没有预先下载的模型文件")
-            print("3. 模型名称不正确或模型不存在")
-            print("\n解决方案:")
-            print("1. 确保您已连接到互联网，首次运行时会自动下载模型")
-            print("2. 或在有网络的环境下使用download_embedding_model.py脚本预先下载模型")
-            print("3. 或在.env文件中设置OFFLINE_MODE=true以强制使用离线模式")
-            print("4. 或设置一个已经下载到本地的模型路径到EMBEDDING_MODEL环境变量")
-            print("="*80 + "\n")
+            error_info = f"\n{'='*80}\n" + \
+                        f"错误: 无法加载嵌入模型: {str(e)}\n" + \
+                        f"模型名称: {self.embedding_model}\n" +\
+                        "\n可能的原因:\n" +\
+                        "1. 没有网络连接，无法下载模型\n" +\
+                        "2. 本地缓存中没有预先下载的模型文件\n" +\
+                        "3. 模型名称不正确或模型不存在\n" +\
+                        "\n解决方案:\n" +\
+                        "1. 确保您已连接到互联网，首次运行时会自动下载模型\n" +\
+                        "2. 或在有网络的环境下使用download_embedding_model.py脚本预先下载模型\n" +\
+                        "3. 或在.env文件中设置OFFLINE_MODE=true以强制使用离线模式\n" +\
+                        "4. 或设置一个已经下载到本地的模型路径到EMBEDDING_MODEL环境变量\n" +\
+                        f"{'='*80}"
+            logger.error(error_info)
             
             # 尝试在离线模式下创建一个简单的本地嵌入模型
             try:
-                print("尝试创建简单的本地嵌入模型...")
+                logger.debug("尝试创建简单的本地嵌入模型...")
                 
                 # 首先尝试使用GPT4AllEmbeddings
                 try:
                     from langchain_community.embeddings import GPT4AllEmbeddings
                     self.embeddings = GPT4AllEmbeddings()
-                    print("成功创建GPT4AllEmbeddings作为替代")
+                    logger.debug("成功创建GPT4AllEmbeddings作为替代")
                 except Exception as gpt4all_err:
-                    print(f"GPT4AllEmbeddings创建失败: {str(gpt4all_err)}")
+                    logger.warning(f"GPT4AllEmbeddings创建失败: {str(gpt4all_err)}")
                     
                     # 如果GPT4All也失败，尝试使用另一个可能的替代方案
                     try:
@@ -74,12 +79,12 @@ class VectorStoreManager:
                             model=os.getenv('OLLAMA_MODEL', 'llama3'),
                             base_url=os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
                         )
-                        print("成功创建OllamaEmbeddings作为替代")
+                        logger.debug("成功创建OllamaEmbeddings作为替代")
                     except Exception as ollama_err:
-                        print(f"OllamaEmbeddings创建失败: {str(ollama_err)}")
+                        logger.warning(f"OllamaEmbeddings创建失败: {str(ollama_err)}")
                         
                         # 如果所有替代方案都失败，创建一个更强大的模拟嵌入类
-                        print("警告: 无法创建替代嵌入模型。创建增强的模拟嵌入模型...")
+                        logger.warning("无法创建替代嵌入模型。创建增强的模拟嵌入模型...")
                         from langchain_core.embeddings import Embeddings
                         import hashlib
                         import numpy as np
@@ -88,8 +93,8 @@ class VectorStoreManager:
                             """增强的模拟嵌入类，提供更稳定的结果"""
                             def __init__(self, embedding_dim=384):
                                 self.embedding_dim = embedding_dim
-                                print(f"创建增强模拟嵌入模型 (维度: {embedding_dim})")
-                            
+                                logger.debug(f"创建增强模拟嵌入模型 (维度: {embedding_dim})")
+                                
                             def _get_hash_vector(self, text):
                                 """基于文本哈希生成确定性向量"""
                                 # 使用哈希算法生成固定长度的向量
@@ -110,7 +115,7 @@ class VectorStoreManager:
                                     vector.extend(additional_values)
                                 
                                 return vector
-                            
+                                
                             def embed_documents(self, texts):
                                 """为文档列表生成嵌入向量"""
                                 return [self._get_hash_vector(text) for text in texts]
@@ -118,11 +123,11 @@ class VectorStoreManager:
                             def embed_query(self, text):
                                 """为查询文本生成嵌入向量"""
                                 return self._get_hash_vector(text)
-                        
+                            
                         self.embeddings = EnhancedMockEmbeddings()
-                        print("已创建增强的模拟嵌入模型，用于在离线环境下提供基本功能")
+                        logger.debug("已创建增强的模拟嵌入模型，用于在离线环境下提供基本功能")
             except Exception as e:
-                print(f"创建替代嵌入模型时出现意外错误: {str(e)}")
+                logger.error(f"创建替代嵌入模型时出现意外错误: {str(e)}")
                 # 作为最后的后备方案，创建一个非常简单的模拟嵌入
                 from langchain_core.embeddings import Embeddings
                 class MinimalMockEmbeddings(Embeddings):
@@ -135,7 +140,7 @@ class VectorStoreManager:
                         return [random.random() for _ in range(384)]
                 
                 self.embeddings = MinimalMockEmbeddings()
-                print("已创建最小化的模拟嵌入模型")
+                logger.debug("已创建最小化的模拟嵌入模型")
         
         # 初始化向量存储
         self.vector_store = None
@@ -157,7 +162,7 @@ class VectorStoreManager:
             loader_cls=lambda path: TextLoader(path, encoding='utf-8')
         )
         documents = loader.load()
-        print(f"加载了 {len(documents)} 个文档")
+        logger.debug(f"加载了 {len(documents)} 个文档")
         return documents
     
     def split_documents(self, documents):
@@ -175,8 +180,9 @@ class VectorStoreManager:
             chunk_overlap=self.chunk_overlap,
             separators=["\n\n", "\n", " ", ""]
         )
+        logger.debug(f"正在将 {len(documents)} 个文档分割成小块...")
         splits = text_splitter.split_documents(documents)
-        print(f"文档分割成 {len(splits)} 个块")
+        logger.debug(f"分割完成，共生成 {len(splits)} 个文档块")
         return splits
     
     def create_vector_store(self, splits):
@@ -196,7 +202,7 @@ class VectorStoreManager:
         if not os.path.exists(self.vector_store_path):
             os.makedirs(self.vector_store_path)
         self.vector_store.save_local(self.vector_store_path)
-        print(f"向量存储已保存到 {self.vector_store_path}")
+        logger.debug(f"向量存储已保存到 {self.vector_store_path}")
         
         return self.vector_store
     
@@ -218,21 +224,21 @@ class VectorStoreManager:
                     self.embeddings,
                     allow_dangerous_deserialization=True
                 )
-                print(f"向量存储已从 {self.vector_store_path} 加载")
+                logger.debug(f"向量存储已从 {self.vector_store_path} 加载")
             except Exception as e:
-                print(f"加载向量存储时出错: {str(e)}")
-                print("将重新创建向量存储...")
+                logger.error(f"加载向量存储时出错: {str(e)}")
+                logger.debug("将重新创建向量存储...")
                 # 尝试重新创建向量存储
                 documents = self.load_documents()
                 if documents:
                     splits = self.split_documents(documents)
                     self.create_vector_store(splits)
         else:
-            print(f"向量存储文件不存在: {self.vector_store_path}")
+            logger.warning(f"向量存储文件不存在: {self.vector_store_path}")
             # 确保向量存储目录存在
             if not os.path.exists(self.vector_store_path):
                 os.makedirs(self.vector_store_path)
-                print(f"已创建向量存储目录: {self.vector_store_path}")
+                logger.debug(f"已创建向量存储目录: {self.vector_store_path}")
             
             # 尝试从数据目录创建向量存储
             documents = self.load_documents()
@@ -240,7 +246,7 @@ class VectorStoreManager:
                 splits = self.split_documents(documents)
                 self.create_vector_store(splits)
             else:
-                print("警告: 没有找到文档来创建向量存储。请确保data目录下有文本文件。")
+                logger.warning("没有找到文档来创建向量存储。请确保data目录下有文本文件。")
                 # 创建一个空的向量存储作为占位符
                 self._create_empty_vector_store()
         
@@ -259,10 +265,10 @@ class VectorStoreManager:
             if hasattr(self.embeddings, 'embed_documents'):
                 self.vector_store = FAISS.from_documents(empty_docs, self.embeddings)
                 self.vector_store.save_local(self.vector_store_path)
-                print(f"已创建空向量存储作为占位符: {self.vector_store_path}")
+                logger.debug(f"已创建空向量存储作为占位符: {self.vector_store_path}")
         except Exception as e:
-            print(f"创建空向量存储时出错: {str(e)}")
-            print("将创建一个简单的模拟向量存储类")
+            logger.error(f"创建空向量存储时出错: {str(e)}")
+            logger.debug("将创建一个简单的模拟向量存储类")
             
             # 创建一个模拟向量存储类
             class MockVectorStore:
@@ -286,13 +292,18 @@ class VectorStoreManager:
             相关文档列表
         """
         if not self.vector_store:
+            logger.debug("向量存储未初始化，正在加载...")
             self.load_vector_store()
         
         if self.vector_store:
+            # 安全地记录查询文本，避免对非字符串类型进行切片操作
+            query_text = str(query)[:50] if isinstance(query, (str, bytes)) else str(query)
+            logger.debug(f"正在进行相似度搜索，查询: {query_text}...")
             relevant_docs = self.vector_store.similarity_search(query, k=k)
+            logger.debug(f"检索完成，找到 {len(relevant_docs)} 个相关文档")
             return relevant_docs
         else:
-            print("向量存储未初始化，无法进行检索")
+            logger.warning("向量存储未初始化，无法进行检索")
             return []
     
     def update_vector_store(self, data_dir='data'):
@@ -305,9 +316,12 @@ class VectorStoreManager:
         Returns:
             更新后的向量存储
         """
+        logger.debug(f"开始更新向量存储，数据目录: {data_dir}")
         documents = self.load_documents(data_dir)
         splits = self.split_documents(documents)
-        return self.create_vector_store(splits)
+        vector_store = self.create_vector_store(splits)
+        logger.debug("向量存储更新完成")
+        return vector_store
 
 # 示例用法
 if __name__ == "__main__":
@@ -325,8 +339,11 @@ if __name__ == "__main__":
     query = "什么是股票的市盈率？"
     relevant_docs = vector_store_manager.retrieve(query)
     
-    print(f"\n检索到的相关文档 ({len(relevant_docs)}):")
+    logger.debug(f"\n检索到的相关文档 ({len(relevant_docs)}):")
     for i, doc in enumerate(relevant_docs):
-        print(f"\n文档 {i+1}: ")
-        print(f"内容: {doc.page_content[:200]}...")
-        print(f"来源: {doc.metadata['source']}")
+        logger.debug(f"\n文档 {i+1}: ")
+        logger.debug(f"内容: {doc.page_content[:200]}...")
+        if 'source' in doc.metadata:
+            logger.debug(f"来源: {doc.metadata['source']}")
+        else:
+            logger.debug("来源: 未知")

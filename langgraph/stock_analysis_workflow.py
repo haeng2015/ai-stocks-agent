@@ -43,9 +43,13 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 import os
 from dotenv import load_dotenv
+from utils.logger import get_logger
 
 # 加载环境变量
 load_dotenv()
+
+# 创建日志实例
+logger = get_logger('workflow')
 
 class StockAnalysisWorkflow:
     """股票分析工作流，使用LangGraph构建多代理协作的股票分析系统"""
@@ -61,7 +65,9 @@ class StockAnalysisWorkflow:
         self.workflow = None
         
         # 初始化工作流
+        logger.info("初始化股票分析工作流")
         self._build_workflow()
+        logger.debug("股票分析工作流初始化完成")
     
     def _build_workflow(self):
         """\构建LangGraph工作流"""
@@ -99,7 +105,7 @@ class StockAnalysisWorkflow:
         Returns:
             更新后的状态
         """
-        print("[查询分析器] 正在分析用户查询...")
+        logger.debug("[查询分析器] 正在分析用户查询...")
         
         # 获取用户查询
         query = state.get("query", "")
@@ -124,7 +130,7 @@ class StockAnalysisWorkflow:
         
         # 更新状态
         state["query_analysis"] = result
-        print(f"[查询分析器] 分析结果: {result}")
+        logger.debug(f"[查询分析器] 分析结果: {result}")
         
         return state
     
@@ -138,7 +144,7 @@ class StockAnalysisWorkflow:
         Returns:
             更新后的状态
         """
-        print("[基本面分析师] 正在进行基本面分析...")
+        logger.debug("[基本面分析师] 正在进行基本面分析...")
         
         # 获取查询分析结果
         query_analysis = state.get("query_analysis", "")
@@ -166,7 +172,7 @@ class StockAnalysisWorkflow:
         
         # 更新状态
         state["fundamental_analysis"] = fundamental_analysis
-        print(f"[基本面分析师] 分析完成")
+        logger.debug("[基本面分析师] 分析完成")
         
         return state
     
@@ -180,7 +186,7 @@ class StockAnalysisWorkflow:
         Returns:
             更新后的状态
         """
-        print("[技术分析师] 正在进行技术分析...")
+        logger.debug("[技术分析师] 正在进行技术分析...")
         
         # 获取查询分析结果
         query_analysis = state.get("query_analysis", "")
@@ -209,7 +215,7 @@ class StockAnalysisWorkflow:
         
         # 更新状态
         state["technical_analysis"] = technical_analysis
-        print(f"[技术分析师] 分析完成")
+        logger.debug("[技术分析师] 分析完成")
         
         return state
     
@@ -223,7 +229,7 @@ class StockAnalysisWorkflow:
         Returns:
             更新后的状态
         """
-        print("[市场情绪分析师] 正在进行市场情绪分析...")
+        logger.debug("[市场情绪分析师] 正在进行市场情绪分析...")
         
         # 获取查询分析结果
         query_analysis = state.get("query_analysis", "")
@@ -252,7 +258,7 @@ class StockAnalysisWorkflow:
         
         # 更新状态
         state["sentiment_analysis"] = sentiment_analysis
-        print(f"[市场情绪分析师] 分析完成")
+        logger.debug("[市场情绪分析师] 分析完成")
         
         return state
     
@@ -266,7 +272,7 @@ class StockAnalysisWorkflow:
         Returns:
             更新后的状态
         """
-        print("[报告生成器] 正在生成综合分析报告...")
+        logger.debug("[报告生成器] 正在生成综合分析报告...")
         
         # 获取各分析师的分析结果
         query_analysis = state.get("query_analysis", "")
@@ -311,7 +317,7 @@ class StockAnalysisWorkflow:
         
         # 更新状态
         state["final_report"] = report
-        print(f"[报告生成器] 报告生成完成")
+        logger.debug("[报告生成器] 报告生成完成")
         
         return state
     
@@ -331,7 +337,9 @@ class StockAnalysisWorkflow:
             config = {"configurable": {"thread_id": "stock_analysis_thread_1"}}
         
         # 执行工作流
+        logger.debug(f"开始执行工作流，查询: {query[:50]}...")
         result = self.workflow.invoke({"query": query}, config=config)
+        logger.debug("工作流执行完成")
         
         return result
 
@@ -352,15 +360,15 @@ if __name__ == "__main__":
     ]
     
     for query in queries:
-        print(f"\n\n===== 处理查询: {query} =====")
+        logger.debug(f"\n\n===== 处理查询: {query} =====")
         try:
             # 执行工作流
             result = workflow.invoke(query)
             
             # 打印最终报告
-            print("\n\n===== 综合分析报告 =====")
-            print(result["final_report"])
+            logger.debug("\n\n===== 综合分析报告 =====")
+            logger.debug(result["final_report"])
         except Exception as e:
-            print(f"错误: {str(e)}")
+            logger.error(f"错误: {str(e)}")
         
-        print("\n\n" + "="*50 + "\n")
+        logger.debug("\n\n" + "="*50 + "\n")

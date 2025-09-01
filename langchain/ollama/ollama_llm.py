@@ -5,9 +5,13 @@ from langchain_ollama.chat_models import ChatOllama
 from langchain_core.runnables import Runnable
 import os
 from dotenv import load_dotenv
+from utils.logger import get_logger
 
 # 加载环境变量
 load_dotenv()
+
+# 创建日志实例
+logger = get_logger('ollama_llm')
 
 # 针对弃用警告的兼容性处理 - 检查是否需要导入替代方案
 # try:
@@ -33,33 +37,50 @@ class OllamaLLM(Runnable):
         self.temperature = temperature
         
         # 初始化ChatOllama实例
+        logger.info(f"初始化Ollama LLM: 模型={self.model}, 基础URL={self.base_url}")
         self.llm = ChatOllama(
             model=self.model,
             base_url=self.base_url,
             temperature=self.temperature,
             keep_alive="1h"  # 保持模型活跃1小时
         )
+        logger.debug("Ollama LLM初始化完成")
         
         # 创建输出解析器
         self.output_parser = StrOutputParser()
     
     def invoke(self, input_data, config=None, **kwargs):
         """实现Runnable接口的invoke方法"""
-        if isinstance(input_data, str):
-            # 如果输入是字符串，直接调用内部的LLM
-            return self._invoke_internal(input_data, kwargs.get('system_prompt'))
-        elif isinstance(input_data, dict) and 'input' in input_data:
-            # 如果输入是包含'input'键的字典（LangChain标准格式）
-            system_prompt = kwargs.get('system_prompt') or input_data.get('system_prompt')
-            return self._invoke_internal(input_data['input'], system_prompt)
-        else:
-            # 其他情况尝试将输入转换为字符串
-            return self._invoke_internal(str(input_data), kwargs.get('system_prompt'))
+        try:
+            logger.debug(f"开始调用Ollama模型: {self.model}")
+            if isinstance(input_data, str):
+                # 如果输入是字符串，直接调用内部的LLM
+                return self._invoke_internal(input_data, kwargs.get('system_prompt'))
+            elif isinstance(input_data, dict) and 'input' in input_data:
+                # 如果输入是包含'input'键的字典（LangChain标准格式）
+                system_prompt = kwargs.get('system_prompt') or input_data.get('system_prompt')
+                return self._invoke_internal(input_data['input'], system_prompt)
+            else:
+                # 其他情况尝试将输入转换为字符串
+                return self._invoke_internal(str(input_data), kwargs.get('system_prompt'))
+        except Exception as e:
+            logger.error(f"Ollama模型调用失败: {str(e)}")
+            raise
     
     def _invoke_internal(self, input_text, system_prompt=None):
         """内部调用方法，避免递归"""
-        chain = self.create_chain(system_prompt)
-        return chain.invoke({"input": input_text})
+        try:
+            logger.debug(f"内部调用，输入文本长度: {len(input_text)}字符")
+            if system_prompt:
+                logger.debug(f"使用系统提示: {system_prompt[:50]}...")
+            
+            chain = self.create_chain(system_prompt)
+            result = chain.invoke({"input": input_text})
+            logger.debug(f"内部调用成功，返回结果长度: {len(result)}字符")
+            return result
+        except Exception as e:
+            logger.error(f"内部调用失败: {str(e)}")
+            raise
     
     def create_chain(self, system_prompt=None):
         """
@@ -108,9 +129,18 @@ class OllamaLLM(Runnable):
         Returns:
             模型生成的文本列表
         """
-        # 对于批量调用，我们保持原有的实现方式
-        chain = self.create_chain(system_prompt)
-        return chain.batch([{"input": input_text} for input_text in inputs])
+        try:
+            logger.debug(f"开始批量调用Ollama模型，共{len(inputs)}个输入")
+            if system_prompt:
+                logger.debug(f"使用系统提示: {system_prompt[:50]}...")
+            
+            chain = self.create_chain(system_prompt)
+            results = chain.batch([{"input": input_text} for input_text in inputs])
+            logger.debug(f"批量调用完成，成功处理{len(results)}个输入")
+            return results
+        except Exception as e:
+            logger.error(f"批量调用失败: {str(e)}")
+            raise
 
 # 示例用法
 if __name__ == "__main__":
@@ -119,12 +149,12 @@ if __name__ == "__main__":
     
     # 测试基本调用
     response = ollama_llm.invoke("什么是股票基本面分析？")
-    print("基本调用结果:")
-    print(response)
-    print("\n" + "="*50 + "\n")
+    logger.debug("基本调用结果:")
+    logger.debug(response)
+    logger.debug("\n" + "="*50 + "\n")
     
     # 测试带系统提示的调用
     system_prompt = "你是一位专业的金融分析师，请用简单易懂的语言解释复杂的金融概念。"
     response_with_system = ollama_llm.invoke("什么是股票基本面分析？", system_prompt)
-    print("带系统提示的调用结果:")
-    print(response_with_system)
+    logger.debug("带系统提示的调用结果:")
+    logger.debug(response_with_system)

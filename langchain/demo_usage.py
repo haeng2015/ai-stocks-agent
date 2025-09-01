@@ -1,5 +1,10 @@
-from agent_langchain.model_selector import ModelSelector
 import time
+from .model_selector import ModelSelector
+from utils.logger import get_logger
+import time
+
+# 创建日志实例
+logger = get_logger('demo_usage')
 
 """
 股票智能体模型推理示例
@@ -20,50 +25,50 @@ system_prompt = "你是一位专业的金融分析师，拥有丰富的股票市
 
 def run_demo():
     """运行模型推理示例"""
-    print("===== 股票智能体模型推理示例 =====\n")
+    logger.info("===== 股票智能体模型推理示例 =====")
     
     # 初始化模型选择器
     model_selector = ModelSelector()
     
     # 测试Ollama模型
-    print("【测试Ollama模型】")
+    logger.info("【测试Ollama模型】")
     try:
         start_time = time.time()
         for query in stock_queries[:2]:  # 只测试前两个查询，避免耗时过长
-            print(f"\n问: {query}")
+            logger.debug(f"\n问: {query}")
             response = model_selector.invoke(query, model_type='ollama', system_prompt=system_prompt)
-            print(f"答: {response}")
-            print("-" * 50)
+            logger.debug(f"答: {response}")
+            logger.debug("-" * 50)
         ollama_time = time.time() - start_time
-        print(f"\nOllama模型完成测试，耗时: {ollama_time:.2f}秒\n")
+        logger.debug(f"\nOllama模型完成测试，耗时: {ollama_time:.2f}秒")
     except Exception as e:
-        print(f"Ollama模型测试失败: {str(e)}")
+        logger.error(f"Ollama模型测试失败: {str(e)}")
     
     # 测试VLLM模型
-    print("【测试VLLM模型】")
+    logger.info("【测试VLLM模型】")
     try:
         start_time = time.time()
         for query in stock_queries[:2]:  # 只测试前两个查询，避免耗时过长
-            print(f"\n问: {query}")
+            logger.debug(f"\n问: {query}")
             response = model_selector.invoke(query, model_type='vllm', system_prompt=system_prompt)
-            print(f"答: {response}")
-            print("-" * 50)
+            logger.debug(f"答: {response}")
+            logger.debug("-" * 50)
         vllm_time = time.time() - start_time
-        print(f"\nVLLM模型完成测试，耗时: {vllm_time:.2f}秒\n")
+        logger.debug(f"\nVLLM模型完成测试，耗时: {vllm_time:.2f}秒")
     except Exception as e:
-        print(f"VLLM模型测试失败: {str(e)}")
-        print("请确保vllm服务已启动，可以使用以下命令启动:")
-        print("python -m vllm.entrypoints.api_server --model meta-llama/Llama-3-8b-instruct --port 8000")
+        logger.error(f"VLLM模型测试失败: {str(e)}")
+        logger.error("请确保vllm服务已启动，可以使用以下命令启动:")
+        logger.error("python -m vllm.entrypoints.api_server --model meta-llama/Llama-3-8b-instruct --port 8000")
     
     # 比较两种模型的性能
     if 'ollama_time' in locals() and 'vllm_time' in locals():
-        print("【性能比较】")
+        logger.info("【性能比较】")
         if ollama_time < vllm_time:
-            print(f"Ollama模型比VLLM模型快 {vllm_time/ollama_time:.2f}倍")
+            logger.debug(f"Ollama模型比VLLM模型快 {vllm_time/ollama_time:.2f}倍")
         else:
-            print(f"VLLM模型比Ollama模型快 {ollama_time/vllm_time:.2f}倍")
+            logger.debug(f"VLLM模型比Ollama模型快 {ollama_time/vllm_time:.2f}倍")
     
-    print("\n===== 测试完成 =====")
+    logger.info("===== 测试完成 =====")
 
 if __name__ == "__main__":
     run_demo()
