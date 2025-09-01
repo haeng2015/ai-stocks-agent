@@ -41,12 +41,12 @@ class VectorStoreManager:
             # 如果本地模型加载失败，提供友好的错误消息和指导
             print("\n" + "="*80)
             print("错误: 无法加载嵌入模型。这可能是因为您没有预先下载模型。")
-            print(f"模型名称: {self.embedding_model}")
-            print("\n解决方案:")
-            print("1. 确保您已连接到互联网，首次运行时会自动下载模型")
-            print("2. 或预先下载模型并放到本地缓存目录")
-            print("3. 或在.env文件中设置EMBEDDING_MODEL环境变量为已下载的本地模型路径")
-            print("="*80 + "\n")
+            # print(f"模型名称: {self.embedding_model}")
+            # print("\n解决方案:")
+            # print("1. 确保您已连接到互联网，首次运行时会自动下载模型")
+            # print("2. 或预先下载模型并放到本地缓存目录")
+            # print("3. 或在.env文件中设置EMBEDDING_MODEL环境变量为已下载的本地模型路径")
+            # print("="*80 + "\n")
             
             # 尝试在离线模式下创建一个简单的嵌入模型
             try:

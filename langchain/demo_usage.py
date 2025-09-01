@@ -1,4 +1,4 @@
-from model_selector import ModelSelector
+from agent_langchain.model_selector import ModelSelector
 import time
 
 """

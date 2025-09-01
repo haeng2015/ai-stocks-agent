@@ -70,8 +70,17 @@ class ModelSelector:
         Returns:
             模型生成的文本
         """
+        # 确定实际使用的模型类型
+        actual_model_type = model_type or self.default_model_type
         model = self.get_model(model_type)
-        return model.invoke(prompt, system_prompt=system_prompt, **kwargs)
+        
+        # 根据模型类型调用相应的方法
+        if actual_model_type == 'ollama':
+            # 对于Ollama模型，使用direct_invoke方法
+            return model.direct_invoke(prompt, system_prompt=system_prompt, **kwargs)
+        else:
+            # 对于其他模型，保持原有调用方式
+            return model.invoke(prompt, system_prompt=system_prompt, **kwargs)
     
     def batch_invoke(self, prompts, model_type=None, system_prompt=None, **kwargs):
         """
