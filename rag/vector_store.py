@@ -28,52 +28,114 @@ class VectorStoreManager:
         
         # 初始化嵌入模型
         try:
-            # 尝试使用本地模型，设置local_files_only=True以强制使用本地缓存
+            # 首先尝试不强制本地文件，允许自动下载模型（如果有网络连接）
+            print(f"尝试加载嵌入模型: {self.embedding_model}")
             self.embeddings = HuggingFaceEmbeddings(
                 model_name=self.embedding_model,
                 model_kwargs={'device': 'cpu'},
                 encode_kwargs={'normalize_embeddings': True},
-                cache_folder=os.getenv('CACHE_DIR', './cache'),
-                local_files_only=True  # 强制使用本地文件，不尝试从Hugging Face下载
+                cache_folder=os.getenv('CACHE_DIR', './cache')
+                # 不设置local_files_only=True，允许自动下载
             )
-            print(f"成功加载本地嵌入模型: {self.embedding_model}")
+            print(f"成功加载嵌入模型: {self.embedding_model}")
         except Exception as e:
-            # 如果本地模型加载失败，提供友好的错误消息和指导
+            # 如果模型加载失败，提供友好的错误消息和指导
             print("\n" + "="*80)
-            print("错误: 无法加载嵌入模型。这可能是因为您没有预先下载模型。")
-            # print(f"模型名称: {self.embedding_model}")
-            # print("\n解决方案:")
-            # print("1. 确保您已连接到互联网，首次运行时会自动下载模型")
-            # print("2. 或预先下载模型并放到本地缓存目录")
-            # print("3. 或在.env文件中设置EMBEDDING_MODEL环境变量为已下载的本地模型路径")
-            # print("="*80 + "\n")
+            print(f"错误: 无法加载嵌入模型: {str(e)}")
+            print(f"模型名称: {self.embedding_model}")
+            print("\n可能的原因:")
+            print("1. 没有网络连接，无法下载模型")
+            print("2. 本地缓存中没有预先下载的模型文件")
+            print("3. 模型名称不正确或模型不存在")
+            print("\n解决方案:")
+            print("1. 确保您已连接到互联网，首次运行时会自动下载模型")
+            print("2. 或在有网络的环境下使用download_embedding_model.py脚本预先下载模型")
+            print("3. 或在.env文件中设置OFFLINE_MODE=true以强制使用离线模式")
+            print("4. 或设置一个已经下载到本地的模型路径到EMBEDDING_MODEL环境变量")
+            print("="*80 + "\n")
             
-            # 尝试在离线模式下创建一个简单的嵌入模型
+            # 尝试在离线模式下创建一个简单的本地嵌入模型
             try:
                 print("尝试创建简单的本地嵌入模型...")
-                from langchain_community.embeddings import GPT4AllEmbeddings
-                self.embeddings = GPT4AllEmbeddings()
-                print("成功创建GPT4AllEmbeddings作为替代")
-            except:
-                print("警告: 无法创建替代嵌入模型。请确保已正确配置环境。")
-                # 创建一个继承自Embeddings基类的模拟嵌入类
-                from langchain_core.embeddings import Embeddings
-                class SimpleMockEmbeddings(Embeddings):
-                    def __init__(self):
-                        pass
+                
+                # 首先尝试使用GPT4AllEmbeddings
+                try:
+                    from langchain_community.embeddings import GPT4AllEmbeddings
+                    self.embeddings = GPT4AllEmbeddings()
+                    print("成功创建GPT4AllEmbeddings作为替代")
+                except Exception as gpt4all_err:
+                    print(f"GPT4AllEmbeddings创建失败: {str(gpt4all_err)}")
                     
+                    # 如果GPT4All也失败，尝试使用另一个可能的替代方案
+                    try:
+                        from langchain_community.embeddings import OllamaEmbeddings
+                        # 尝试使用本地Ollama服务器提供的嵌入功能
+                        self.embeddings = OllamaEmbeddings(
+                            model=os.getenv('OLLAMA_MODEL', 'llama3'),
+                            base_url=os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
+                        )
+                        print("成功创建OllamaEmbeddings作为替代")
+                    except Exception as ollama_err:
+                        print(f"OllamaEmbeddings创建失败: {str(ollama_err)}")
+                        
+                        # 如果所有替代方案都失败，创建一个更强大的模拟嵌入类
+                        print("警告: 无法创建替代嵌入模型。创建增强的模拟嵌入模型...")
+                        from langchain_core.embeddings import Embeddings
+                        import hashlib
+                        import numpy as np
+                        
+                        class EnhancedMockEmbeddings(Embeddings):
+                            """增强的模拟嵌入类，提供更稳定的结果"""
+                            def __init__(self, embedding_dim=384):
+                                self.embedding_dim = embedding_dim
+                                print(f"创建增强模拟嵌入模型 (维度: {embedding_dim})")
+                            
+                            def _get_hash_vector(self, text):
+                                """基于文本哈希生成确定性向量"""
+                                # 使用哈希算法生成固定长度的向量
+                                hash_obj = hashlib.md5(text.encode('utf-8'))
+                                hash_bytes = hash_obj.digest()
+                                
+                                # 从哈希值创建浮点数向量
+                                vector = []
+                                for i in range(0, min(len(hash_bytes), self.embedding_dim)):
+                                    vector.append(float(hash_bytes[i]) / 255.0)
+                                
+                                # 如果向量长度不足，用随机数填充，但保持确定性
+                                if len(vector) < self.embedding_dim:
+                                    # 使用文本本身作为随机种子
+                                    seed = int.from_bytes(hash_obj.digest(), byteorder='big')
+                                    np.random.seed(seed)
+                                    additional_values = np.random.rand(self.embedding_dim - len(vector)).tolist()
+                                    vector.extend(additional_values)
+                                
+                                return vector
+                            
+                            def embed_documents(self, texts):
+                                """为文档列表生成嵌入向量"""
+                                return [self._get_hash_vector(text) for text in texts]
+                            
+                            def embed_query(self, text):
+                                """为查询文本生成嵌入向量"""
+                                return self._get_hash_vector(text)
+                        
+                        self.embeddings = EnhancedMockEmbeddings()
+                        print("已创建增强的模拟嵌入模型，用于在离线环境下提供基本功能")
+            except Exception as e:
+                print(f"创建替代嵌入模型时出现意外错误: {str(e)}")
+                # 作为最后的后备方案，创建一个非常简单的模拟嵌入
+                from langchain_core.embeddings import Embeddings
+                class MinimalMockEmbeddings(Embeddings):
                     def embed_documents(self, texts):
-                        # 返回固定长度的随机向量作为模拟
                         import random
                         return [[random.random() for _ in range(384)] for _ in texts]
                     
                     def embed_query(self, text):
-                        # 返回固定长度的随机向量作为模拟
                         import random
                         return [random.random() for _ in range(384)]
                 
-                self.embeddings = SimpleMockEmbeddings()
-                print("已创建简单的模拟嵌入模型用于测试")
+                self.embeddings = MinimalMockEmbeddings()
+                print("已创建最小化的模拟嵌入模型")
         
         # 初始化向量存储
         self.vector_store = None
