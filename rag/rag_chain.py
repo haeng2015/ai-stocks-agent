@@ -1,8 +1,8 @@
 from .vector_store import VectorStoreManager
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema.runnable import RunnablePassthrough
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableMap
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableMap
 import os
 from dotenv import load_dotenv
 

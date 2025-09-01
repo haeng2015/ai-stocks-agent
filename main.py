@@ -14,17 +14,31 @@ AI Stocks Agent 主程序
 
 import os
 import sys
+
+# 调整sys.path以优先导入已安装的包，解决项目目录与包名冲突问题
+# 获取虚拟环境的site-packages路径
+site_packages = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.venv', 'Lib', 'site-packages')
+
+# 如果site-packages路径存在，调整sys.path
+if os.path.exists(site_packages):
+    # 移除项目根目录（如果存在）以避免导入冲突
+    project_root = os.path.abspath('.')
+    if project_root in sys.path:
+        sys.path.remove(project_root)
+    # 将site-packages添加到最前面
+sys.path.insert(0, site_packages)
+
+# 重新添加项目根目录到Python路径（确保项目模块可导入）
+sys.path.append(os.path.abspath('.'))
+
 import argparse
 import json
 from dotenv import load_dotenv
 
-# 添加项目根目录到Python路径
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from langchain.model_selector import ModelSelector
+from agent_langchain.model_selector import ModelSelector
 from rag.vector_store import VectorStoreManager
 from rag.rag_chain import RAGChain
-from langgraph.stock_analysis_workflow import StockAnalysisWorkflow
+from agent_langgraph.stock_analysis_workflow import StockAnalysisWorkflow
 
 class AIStocksAgent:
     """股票智能体主类，整合所有功能模块"""
