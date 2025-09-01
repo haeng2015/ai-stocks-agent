@@ -140,7 +140,7 @@ class VectorStoreManager:
         # 初始化向量存储
         self.vector_store = None
     
-    def load_documents(self, data_dir='data'):
+    def load_documents(self, data_dir='data/**'):
         """
         从目录加载文档
         

@@ -72,7 +72,7 @@ class ModelSelector:
         """
         # 确定实际使用的模型类型
         actual_model_type = model_type or self.default_model_type
-        model = self.get_model(model_type)
+        model = self.get_model(actual_model_type)
         
         # 根据模型类型调用相应的方法
         if actual_model_type == 'ollama':
@@ -95,7 +95,8 @@ class ModelSelector:
         Returns:
             模型生成的文本列表
         """
-        model = self.get_model(model_type)
+        actual_model_type = model_type or self.default_model_type
+        model = self.get_model(actual_model_type)
         return model.batch_invoke(prompts, system_prompt=system_prompt, **kwargs)
 
 # 示例用法
