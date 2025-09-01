@@ -9,7 +9,7 @@ import sys
 project_root = os.path.abspath('.')
 sys.path.insert(0, project_root)
 
-from langchain.model_selector import ModelSelector
+from stockschain.model_selector import ModelSelector
 
 def test_model_selector():
     """测试模型选择器是否能够正常工作"""

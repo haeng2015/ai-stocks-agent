@@ -174,7 +174,7 @@ class RAGChain:
 
 # 示例用法
 if __name__ == "__main__":
-    from langchain.model_selector import ModelSelector
+    from stockschain.model_selector import ModelSelector
     
     # 初始化模型选择器
     model_selector = ModelSelector(default_model_type='ollama')

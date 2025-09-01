@@ -23,13 +23,18 @@ ai-stocks-agent/
 ├── .env                 # 环境变量配置
 ├── data/                # 数据存储目录
 ├── tools/               # 工具函数
-├── langchain/           # LangChain相关代码
+├── stockschain/         # 股票链相关代码
 │   ├── ollama/          # Ollama模型推理
 │   ├── vllm/            # VLLM模型推理
 │   ├── model_selector.py # 模型选择器
 │   └── demo_usage.py    # 示例用法
-├── langgraph/           # LangGraph工作流
-└── rag/                 # RAG相关代码
+├── stocksgraph/         # 股票图工作流
+├── rag/                 # RAG相关代码
+└── stocksmith/          # LangSmith分析评估工具
+    ├── __init__.py      # 包初始化
+    ├── evaluator.py     # 评估器实现
+    ├── visualizer.py    # 可视化工具
+    └── example_usage.py # 评估功能示例
 ```
 
 ## 安装指南
@@ -90,7 +95,7 @@ python -m vllm.entrypoints.api_server --model meta-llama/Llama-3-8b-instruct --p
 ### 基本使用
 
 ```python
-from langchain.model_selector import ModelSelector
+from stockschain.model_selector import ModelSelector
 
 # 初始化模型选择器
 model_selector = ModelSelector(default_model_type='ollama')
@@ -114,9 +119,84 @@ print(response_vllm)
 ### 运行示例脚本
 
 ```bash
-cd langchain
+cd stockschain
 python demo_usage.py
 ```
+
+### LangSmith分析评估使用示例
+
+以下是如何使用stocksmith模块进行股票分析评估的示例：
+
+```python
+from stocksmith.evaluator import StocksEvaluator
+from stocksmith.visualizer import StocksVisualizer
+from stockschain.model_selector import ModelSelector
+
+# 初始化模型选择器
+model_selector = ModelSelector(default_model_type='ollama')
+
+# 准备测试用例
+test_cases = [
+    {
+        "query": "分析苹果公司(APPL)的基本面情况",
+        "reference_answer": "苹果公司是全球领先的科技公司，主要产品包括iPhone、iPad、Mac等。最新季度财报显示营收增长5%，净利润增长8%，毛利率维持在45%左右。公司现金流状况良好，研发投入持续增加，新产品管线丰富。"
+    },
+    # 更多测试用例...
+]
+
+# 运行分析并收集结果
+results = []
+for case in test_cases:
+    response = model_selector.invoke(
+        case["query"],
+        system_prompt="你是一位专业的金融分析师。"
+    )
+    results.append({
+        "query": case["query"],
+        "reference_answer": case["reference_answer"],
+        "prediction": response
+    })
+
+# 初始化评估器并进行评估
+evaluator = StocksEvaluator()
+evaluation_results = evaluator.evaluate(results)
+
+# 保存评估结果
+evaluator.save_evaluation_results(evaluation_results, "visualizations/evaluation_results.json")
+
+# 可视化评估结果
+visualizer = StocksVisualizer()
+visualizer.generate_visualizations(
+    evaluation_results,
+    radar_chart_path="visualizations/radar_chart.png",
+    score_distribution_path="visualizations/score_distribution.png",
+    comparison_path="visualizations/interactive_comparison.html"
+)
+
+print("评估完成！可视化结果已保存到visualizations目录")
+```
+
+#### 运行完整分析
+
+可以使用以下命令运行完整的分析、评估和可视化流程：
+
+```bash
+python stocksmith/example_usage.py --run-full-analysis
+```
+
+#### 仅运行评估
+
+如果只需要运行评估而不进行完整分析，可以使用：
+
+```bash
+python stocksmith/example_usage.py --run-evaluation
+```
+
+<img src="./imgs/radar_chart.png" alt="radar_chart" style="zoom:21%;" />
+
+<img src="./imgs/score_distribution.png" alt="score_distribution" style="zoom:17%;" />
+
+
 
 ## 功能模块
 
@@ -137,6 +217,35 @@ python demo_usage.py
 ### 3. RAG检索增强
 
 通过RAG技术，智能体可以检索相关的股票知识和历史数据，为用户提供更准确的分析和建议。
+
+### 4. LangSmith分析评估模块
+
+stocksmith模块提供了强大的股票分析评估功能，可以评估模型生成的股票分析结果的质量。主要功能包括：
+
+#### 4.1 评估指标
+
+- **准确性评估(Accuracy)**：评估分析结果与参考答案的匹配程度
+- **相关性评估(Relevance)**：评估生成内容与查询问题的相关程度
+- **全面性评估(Comprehensiveness)**：评估分析内容是否全面覆盖了相关方面
+- **整体评分(Overall Score)**：综合上述指标得出的总体评分
+
+#### 4.2 评估方法
+
+- **StocksEvaluator**：核心评估器类，实现了各种评估指标的计算
+- **LocalRun**：本地运行记录类，用于在没有LangSmith配置时模拟运行记录
+- **LocalEvaluationResult**：本地评估结果类，模拟LangSmith评估结果
+
+#### 4.3 可视化功能
+
+- **StocksVisualizer**：可视化工具类，可生成评估结果的图表和交互式比较
+- 支持雷达图、得分分布图和交互式比较表格等多种可视化形式
+
+#### 4.4 本地和云端评估
+
+- 支持在配置了LangSmith的情况下使用云端评估功能
+- 在没有LangSmith配置时自动切换到本地评估模式
+- 自动序列化评估结果并保存为JSON格式
+
 
 ## 注意事项
 
