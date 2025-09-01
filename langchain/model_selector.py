@@ -1,6 +1,6 @@
 from .vllm.vllm_llm import VLLM
 from .ollama.ollama_llm import OllamaLLM
-from .vllm.vllm_llm import VLLM
+from .api.api_llm import APILLM
 import os
 from dotenv import load_dotenv
 
@@ -17,7 +17,8 @@ class ModelSelector:
     # 支持的模型类型
     MODEL_TYPES = {
         'ollama': OllamaLLM,
-        'vllm': VLLM
+        'vllm': VLLM,
+        'api': APILLM
     }
     
     def __init__(self, default_model_type=None):
@@ -131,23 +132,32 @@ class ModelSelector:
             raise
 
 # 示例用法
-    if __name__ == "__main__":
-        # 初始化模型选择器
-        model_selector = ModelSelector(default_model_type='ollama')
-        
-        # 使用默认模型(ollama)进行调用
-        try:
-            response_ollama = model_selector.invoke("解释一下什么是股票技术分析？")
-            logger.debug("Ollama模型调用结果:")
-            logger.debug(response_ollama)
-            logger.debug("\n" + "="*50 + "\n")
-        except Exception as e:
-            logger.error(f"Ollama调用失败: {str(e)}")
-        
-        # 使用vllm模型进行调用
-        try:
-            response_vllm = model_selector.invoke("解释一下什么是股票技术分析？", model_type='vllm')
-            logger.debug("VLLM模型调用结果:")
-            logger.debug(response_vllm)
-        except Exception as e:
-            logger.error(f"VLLM调用失败: {str(e)}")
+if __name__ == "__main__":
+    # 初始化模型选择器
+    model_selector = ModelSelector(default_model_type='ollama')
+    
+    # 使用默认模型(ollama)进行调用
+    try:
+        response_ollama = model_selector.invoke("解释一下什么是股票技术分析？")
+        logger.debug("Ollama模型调用结果:")
+        logger.debug(response_ollama)
+        logger.debug("\n" + "="*50 + "\n")
+    except Exception as e:
+        logger.error(f"Ollama调用失败: {str(e)}")
+    
+    # 使用vllm模型进行调用
+    try:
+        response_vllm = model_selector.invoke("解释一下什么是股票技术分析？", model_type='vllm')
+        logger.debug("VLLM模型调用结果:")
+        logger.debug(response_vllm)
+        logger.debug("\n" + "="*50 + "\n")
+    except Exception as e:
+        logger.error(f"VLLM调用失败: {str(e)}")
+    
+    # 使用API模型进行调用
+    try:
+        response_api = model_selector.invoke("解释一下什么是股票技术分析？", model_type='api')
+        logger.debug("API模型调用结果:")
+        logger.debug(response_api)
+    except Exception as e:
+        logger.error(f"API调用失败: {str(e)}")

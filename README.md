@@ -158,26 +158,24 @@ python demo_usage.py
 
 
 
-```test
-项目依赖列表
+## 项目依赖列表
 
 以下是AI Stocks Agent项目中使用的所有依赖包及其版本:
 
-1. langgraph-sdk>=0.2.0 - 用于构建LangGraph工作流
-2. openai>=1.0.0 - OpenAI API客户端
-3. pandas>=2.0.0 - 数据分析库
-4. numpy>=1.24.0 - 科学计算库
-5. matplotlib>=3.7.0 - 数据可视化库
-6. scikit-learn>=1.3.0 - 机器学习库
-7. sentence-transformers>=2.2.0 - 句子嵌入模型
-8. faiss-cpu>=1.7.4 - 高效相似度搜索和聚类库
-9. finviz==1.4.6 - 金融数据可视化工具
-10. yfinance>=0.2.31 - Yahoo Finance API客户端
-11. pydantic>=2.0.0 - 数据验证库
-12. python-dotenv>=1.0.0 - 环境变量管理
-13. langsmith>=0.0.70 - LangChain追踪和监控工具
-14. plotly>=5.15.0 - 交互式数据可视化库
-15. seaborn>=0.12.0 - 统计数据可视化库
-16. ollama>=0.1.0 - Ollama本地LLM客户端
-17. vllm>=0.3.3 - 高性能LLM推理库
-```
+> 1. langgraph-sdk>=0.2.0 - 用于构建LangGraph工作流
+> 2. openai>=1.0.0 - OpenAI API客户端
+> 3. pandas>=2.0.0 - 数据分析库
+> 4. numpy>=1.24.0 - 科学计算库
+> 5. matplotlib>=3.7.0 - 数据可视化库
+> 6. scikit-learn>=1.3.0 - 机器学习库
+> 7. sentence-transformers>=2.2.0 - 句子嵌入模型
+> 8. faiss-cpu>=1.7.4 - 高效相似度搜索和聚类库
+> 9. finviz==1.4.6 - 金融数据可视化工具
+> 10. yfinance>=0.2.31 - Yahoo Finance API客户端
+> 11. pydantic>=2.0.0 - 数据验证库
+> 12. python-dotenv>=1.0.0 - 环境变量管理
+> 13. langsmith>=0.0.70 - LangChain追踪和监控工具
+> 14. plotly>=5.15.0 - 交互式数据可视化库
+> 15. seaborn>=0.12.0 - 统计数据可视化库
+> 16. ollama>=0.1.0 - Ollama本地LLM客户端
+> 17. vllm>=0.3.3 - 高性能LLM推理库
