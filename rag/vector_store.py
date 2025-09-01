@@ -145,7 +145,7 @@ class VectorStoreManager:
         # 初始化向量存储
         self.vector_store = None
     
-    def load_documents(self, data_dir='data/**'):
+    def load_documents(self, data_dir='data'):
         """
         从目录加载文档
         
@@ -156,13 +156,20 @@ class VectorStoreManager:
             加载的文档列表
         """
         # 在较新版本的LangChain中，encoding参数应传递给TextLoader而不是DirectoryLoader
+        # 使用recursive=True递归加载所有子目录中的txt文件
         loader = DirectoryLoader(
             data_dir,
-            glob="*.txt",
-            loader_cls=lambda path: TextLoader(path, encoding='utf-8')
+            glob="**/*.txt",  # 递归匹配所有子目录中的txt文件
+            loader_cls=lambda path: TextLoader(path, encoding='utf-8'),
+            recursive=True  # 递归加载子目录
         )
         documents = loader.load()
         logger.debug(f"加载了 {len(documents)} 个文档")
+        
+        # 确保至少加载了一个文档
+        if not documents:
+            logger.warning(f"在 {data_dir} 目录下未找到任何txt文件")
+        
         return documents
     
     def split_documents(self, documents):
