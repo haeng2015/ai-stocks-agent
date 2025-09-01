@@ -299,6 +299,12 @@ class VectorStoreManager:
             # 安全地记录查询文本，避免对非字符串类型进行切片操作
             query_text = str(query)[:50] if isinstance(query, (str, bytes)) else str(query)
             logger.debug(f"正在进行相似度搜索，查询: {query_text}...")
+            
+            # 确保查询是字符串类型
+            if not isinstance(query, (str, bytes)):
+                query = str(query)
+                logger.debug("查询参数已转换为字符串类型")
+                
             relevant_docs = self.vector_store.similarity_search(query, k=k)
             logger.debug(f"检索完成，找到 {len(relevant_docs)} 个相关文档")
             return relevant_docs

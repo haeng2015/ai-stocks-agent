@@ -24,7 +24,7 @@ class RAGChain:
             model: 用于生成回答的语言模型
             vector_store_manager: 向量存储管理器实例
         """
-        logger.info("初始化RAG链...")
+        logger.debug("初始化RAG链...")
         
         self.model = model
         self.vector_store_manager = vector_store_manager or VectorStoreManager()
@@ -34,7 +34,7 @@ class RAGChain:
         
         # 创建RAG链
         self.rag_chain = self._create_rag_chain()
-        logger.info("RAG链初始化完成")
+        logger.debug("RAG链初始化完成")
     
     def _create_rag_chain(self):
         """
@@ -89,6 +89,10 @@ class RAGChain:
         logger.info(f"执行RAG查询: {question_text}...")
         
         try:
+            # 确保问题是字符串类型
+            if not isinstance(question, (str, bytes)):
+                question = str(question)
+            
             # 更新检索参数
             if k != 4:  # 4是默认值
                 # 重新创建RAG链以使用新的k值
@@ -141,9 +145,15 @@ class RAGChain:
         Returns:
             相关文档列表
         """
-        logger.info(f"检索相关文档，查询: {question[:50]}..., 数量: {k}")
+        # 安全地记录查询文本，避免对非字符串类型进行切片操作
+        question_text = str(question)[:50] if isinstance(question, (str, bytes)) else str(question)
+        logger.info(f"检索相关文档，查询: {question_text}..., 数量: {k}")
         
         try:
+            # 确保问题是字符串类型
+            if not isinstance(question, (str, bytes)):
+                question = str(question)
+            
             # 从向量存储中检索相关文档
             docs = self.vector_store_manager.retrieve(question, k=k)
             

@@ -11,7 +11,7 @@ import sys
 class Logger:
     """日志记录器类，提供统一的日志记录功能"""
     
-    def __init__(self, name='ai-stocks-agent', log_dir='logs', log_level=logging.INFO):
+    def __init__(self, name='ai-stocks-agent', log_dir='logs'):
         """
         初始化日志记录器
         
@@ -24,6 +24,10 @@ class Logger:
         self.log_dir = log_dir
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
+
+        # 获取日志级别
+        log_level_str = os.getenv('LOG_LEVEL', 'INFO')
+        log_level = getattr(logging, log_level_str.upper(), logging.INFO)
         
         # 获取当前日期，用于日志文件名
         today = datetime.now().strftime('%Y-%m-%d')
